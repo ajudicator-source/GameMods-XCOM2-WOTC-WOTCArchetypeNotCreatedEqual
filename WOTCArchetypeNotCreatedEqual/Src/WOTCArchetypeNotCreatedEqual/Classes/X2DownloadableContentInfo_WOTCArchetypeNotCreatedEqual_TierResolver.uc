@@ -53,19 +53,32 @@ static function int ATNCE_ResolveStatValueByTierWeight(
 ///   minRefineTier - The minimum tier that should be refined (prevents lower tiers from being selected)
 ///   soldierDetail - Internal soldier stat state and archetype information
 /// Returns: The selected tier type (ATNCE_TierA, B, C, or D)
+
 static function ATNCE_TierType ATNCE_SelectTierByWeighting(
-	ATNCE_StatConfig statConfig,
-	ATNCE_SelectTierRanges selectTierRanges, 
-	ATNCE_SoldierDetail soldierDetail)
+    ATNCE_StatConfig statConfig,
+    ATNCE_SelectTierRanges selectTierRanges, 
+    ATNCE_SoldierDetail soldierDetail)
 {
     local int setWeightD, setWeightC, setWeightB, setWeightA;
-    local int totalWeight, roll, cumulative;
+    local int globalTotalWeight, roll, cumulative;
     local ATNCE_CoreConfig coreConfig;
     local int currentHighStatCount;
+    local ATNCE_TierType fallbackTier;
 
     coreConfig = class'X2DownloadableContentInfo_WOTCArchetypeNotCreatedEqual'.static.ATNCE_GetCoreConfig();
-
     currentHighStatCount = soldierDetail.HighTierStatsCount;
+
+    globalTotalWeight = statConfig.TierWeights.WeightD + statConfig.TierWeights.WeightC + 
+                        statConfig.TierWeights.WeightB + statConfig.TierWeights.WeightA;
+
+    if (globalTotalWeight <= 0)
+    {
+        if (currentHighStatCount >= soldierDetail.MaxHighTierStatsAllowed && selectTierRanges.maxSelectTier >= ATNCE_TierC)
+        {
+            return ATNCE_TierC;
+        }
+        return selectTierRanges.minSelectTier;
+    }
 
     setWeightD = statConfig.TierWeights.WeightD;
     setWeightC = statConfig.TierWeights.WeightC;
@@ -101,44 +114,41 @@ static function ATNCE_TierType ATNCE_SelectTierByWeighting(
     }
     else if(soldierDetail.PrimaryStatRequiresHighTier && statConfig.StatGroupType == ATNCE_Primary)
     {
-        return ATNCE_TierB;
+        setWeightD = 0;
+        setWeightC = 0;
     }
 
     if (currentHighStatCount >= soldierDetail.MaxHighTierStatsAllowed)
     {   
         setWeightA = 0;
         setWeightB = 0;
-        setWeightC = statConfig.TierWeights.WeightC;
-        setWeightD = statConfig.TierWeights.WeightD;
     }   
 
     `LOG("Resolved Tier Ranges: Min" @ selectTierRanges.minSelectTier @ "to" @ selectTierRanges.maxSelectTier, coreConfig.ATNCE_EnableLogging, 'WOTCArchetype_ATNCE');
     `LOG("Resolved Tier Values: D=" @ setWeightD @ "C=" @ setWeightC @ "B=" @ setWeightB @ "A=" @ setWeightA, coreConfig.ATNCE_EnableLogging, 'WOTCArchetype_ATNCE');
 
-    totalWeight = setWeightD + setWeightC + setWeightB + setWeightA;
+    fallbackTier = selectTierRanges.minSelectTier;
+    if (setWeightD > 0) fallbackTier = ATNCE_TierD;
+    else if (setWeightC > 0) fallbackTier = ATNCE_TierC;
+    else if (setWeightB > 0) fallbackTier = ATNCE_TierB;
+    else if (setWeightA > 0) fallbackTier = ATNCE_TierA;
 
-    if (totalWeight <= 0)
-    {
-        if (currentHighStatCount >= soldierDetail.MaxHighTierStatsAllowed && selectTierRanges.maxSelectTier >= ATNCE_TierC)
-        {
-            return ATNCE_TierC;
-        }
-        return selectTierRanges.minSelectTier;
-    }
-
-    roll = `SYNC_RAND_STATIC(totalWeight);
+    roll = `SYNC_RAND_STATIC(globalTotalWeight);
     cumulative = 0;
 
-    cumulative += setWeightD;
-    if (roll < cumulative) return ATNCE_TierD;
+    cumulative += statConfig.TierWeights.WeightD; 
+    if (setWeightD > 0 && roll < cumulative) return ATNCE_TierD;
 
-    cumulative += setWeightC;
-    if (roll < cumulative) return ATNCE_TierC;
+    cumulative += statConfig.TierWeights.WeightC;
+    if (setWeightC > 0 && roll < cumulative) return ATNCE_TierC;
 
-    cumulative += setWeightB;
-    if (roll < cumulative) return ATNCE_TierB;
+    cumulative += statConfig.TierWeights.WeightB;
+    if (setWeightB > 0 && roll < cumulative) return ATNCE_TierB;
 
-    return ATNCE_TierA;
+    cumulative += statConfig.TierWeights.WeightA;
+    if (setWeightA > 0 && roll < cumulative) return ATNCE_TierA;
+
+    return fallbackTier;
 }
 
 /// Function: ATNCE_GenerateTierRangesByArchetype
