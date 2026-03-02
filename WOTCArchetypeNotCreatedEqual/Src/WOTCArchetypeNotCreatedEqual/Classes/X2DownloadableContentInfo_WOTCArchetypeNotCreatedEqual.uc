@@ -168,6 +168,7 @@ struct ATNCE_SoldierDetail
 	var ATNCE_ArchetypeStatConfig ArchetypeStatConfig;
 	var int HighTierStatsCount;
 	var int MaxHighTierStatsAllowed;
+	var bool PrimaryStatRequiresHighTier;
 	var array<ATNCE_SoldierStat> SoldierStats;
 
 	structdefaultproperties
@@ -175,6 +176,7 @@ struct ATNCE_SoldierDetail
 		SelectedArchetypeIndex = -1;
 		HighTierStatsCount = 0;
 		MaxHighTierStatsAllowed = 2;
+		PrimaryStatRequiresHighTier = false;
 	}
 };
 
@@ -393,6 +395,7 @@ static function ATNCE_SoldierDetail ATNCE_GenerateSoldier(bool enableLogging)
 	local ATNCE_SelectTierRanges selectTierRanges;
 	local array<int> ordereStatFreeIndices;
 	local int randomStatFreeIndex, targetInsertStatIndex;
+	local int countPrimaryStats;
 
 	if (default.ATNCE_StatTierWeights.Length == 0)
 	{
@@ -412,14 +415,19 @@ static function ATNCE_SoldierDetail ATNCE_GenerateSoldier(bool enableLogging)
 	// This allows us to apply the weighting rules for hero stats first before filling in other stats. 
 	// CRITICAL: Used in NCE calculation which need archetypeSoldier to be processed first to ensure correct weighting is applied to other stats.
 	orderedArcheConfigs.length = default.ATNCE_StatTierWeights.Length;
-
+	countPrimaryStats = 0;
 	for (i = (soldierDetail.SelectedArchetypeIndex >= 0 ? 2 : 0); i < default.ATNCE_StatTierWeights.Length; ++i)
 	{
 		ordereStatFreeIndices.AddItem(i);
 	}
 
 	for (i = 0; i < default.ATNCE_StatTierWeights.Length; ++i)
-	{
+	{	
+		if(default.ATNCE_StatTierWeights[i].StatGroupType == ATNCE_Primary)
+		{
+			countPrimaryStats++;
+		}
+
 		if (selectedArchetypeIndex >= 0 && default.ATNCE_StatTierWeights[i].CharStatType == soldierDetail.ArchetypeStatConfig.primaryCharStatType)
 		{
 			orderedArcheConfigs[0] = default.ATNCE_StatTierWeights[i];
@@ -438,10 +446,12 @@ static function ATNCE_SoldierDetail ATNCE_GenerateSoldier(bool enableLogging)
 			ordereStatFreeIndices.Remove(randomStatFreeIndex, 1);
     	}
 	}
-
+	
 	soldierDetail.HighTierStatsCount = 0;
 	soldierDetail.MaxHighTierStatsAllowed = class'X2DownloadableContentInfo_WOTCArchetypeNotCreatedEqual_TierResolver'
-	.static.ATNCE_CalculateMaxHighTierStatsAllowed();
+		.static.ATNCE_CalculateMaxHighTierStatsAllowed();
+	
+	soldierDetail.PrimaryStatRequiresHighTier = soldierDetail.SelectedArchetypeIndex < 0 && countPrimaryStats > 0;
 
 	for (i = 0; i < orderedArcheConfigs.Length; ++i)
 	{
@@ -496,8 +506,11 @@ static function ATNCE_SoldierDetail ATNCE_GenerateSoldier(bool enableLogging)
 		if (selectedTier == ATNCE_TierB || selectedTier == ATNCE_TierA)
 		{
 			soldierDetail.HighTierStatsCount++;
+			if(statConfig.StatGroupType == ATNCE_Primary) {
+				soldierDetail.PrimaryStatRequiresHighTier = false;
+			}
 		}
-			
+
         soldierDetail.SoldierStats.AddItem(soldierStat);
 	}
 
@@ -539,7 +552,7 @@ static function array<ATNCE_SoldierStat> ATNCE_RefineSoldierStats(ATNCE_SoldierD
                 countPrimaryLowTiers++;
             }
         }
-        else if(soldierDetail.soldierStats[i].Tier == ATNCE_TierD)
+        else if(soldierDetail.soldierStats[i].Tier < ATNCE_TierB)
         {
             nonPrimaryStatIndexes.AddItem(i);
         }
@@ -569,7 +582,7 @@ static function array<ATNCE_SoldierStat> ATNCE_RefineSoldierStats(ATNCE_SoldierD
                 enableLogging);
 
         selectedRefinedStat.StatValue = refinedStatValue;
-        selectedRefinedStat.StatMessage = "Refined to" @ selectedTier;
+        selectedRefinedStat.StatMessage = "Refined to" @ selectedRefinedStat.Tier;
         selectedRefinedStat.Tier = selectedTier;
         selectedRefinedStat.isStatRefined = true;
         

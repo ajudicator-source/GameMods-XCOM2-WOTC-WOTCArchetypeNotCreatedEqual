@@ -10,7 +10,7 @@ class X2DownloadableContentInfo_WOTCArchetypeNotCreatedEqual_TierResolver extend
 /// Params:
 ///   tierRanges - The tier range definitions (min/max values for each tier)
 ///   minRefineTier - The minimum tier that should be refined (prevents lower tiers from being selected)
-///   statStateDetails - Internal soldier stat state and archetype information
+///   soldierDetail - Internal soldier stat state and archetype information
 ///   enableLogging - Whether to enable debug logging
 ///   selectedTier - Output parameter containing the selected tier type
 /// Returns: The resolved stat value based on the selected tier's range
@@ -51,59 +51,77 @@ static function int ATNCE_ResolveStatValueByTierWeight(
 ///   statType - The character stat type being evaluated
 ///   weights - The weight configuration for each tier
 ///   minRefineTier - The minimum tier that should be refined (prevents lower tiers from being selected)
-///   statStateDetails - Internal soldier stat state and archetype information
+///   soldierDetail - Internal soldier stat state and archetype information
 /// Returns: The selected tier type (ATNCE_TierA, B, C, or D)
 static function ATNCE_TierType ATNCE_SelectTierByWeighting(
 	ATNCE_StatConfig statConfig,
 	ATNCE_SelectTierRanges selectTierRanges, 
-	ATNCE_SoldierDetail statStateDetails)
+	ATNCE_SoldierDetail soldierDetail)
 {
     local int setWeightD, setWeightC, setWeightB, setWeightA;
     local int totalWeight, roll, cumulative;
     local ATNCE_CoreConfig coreConfig;
+    local int currentHighStatCount;
 
     coreConfig = class'X2DownloadableContentInfo_WOTCArchetypeNotCreatedEqual'.static.ATNCE_GetCoreConfig();
 
-    `LOG("The Select Tier Ranges are: Min" @ selectTierRanges.minSelectTier @ "to" @ selectTierRanges.maxSelectTier, coreConfig.ATNCE_EnableLogging, 'WOTCArchetype_ATNCE');
+    currentHighStatCount = soldierDetail.HighTierStatsCount;
 
     setWeightD = statConfig.TierWeights.WeightD;
     setWeightC = statConfig.TierWeights.WeightC;
     setWeightB = statConfig.TierWeights.WeightB;
     setWeightA = statConfig.TierWeights.WeightA;
 
+    `LOG("Input Tier Values: D=" @ setWeightD @ "C=" @ setWeightC @ "B=" @ setWeightB @ "A=" @ setWeightA, coreConfig.ATNCE_EnableLogging, 'WOTCArchetype_ATNCE');
+
+    if(soldierDetail.SelectedArchetypeIndex < 0
+        && soldierDetail.PrimaryStatRequiresHighTier
+        && (currentHighStatCount + 1) == soldierDetail.MaxHighTierStatsAllowed
+        && statConfig.StatGroupType != ATNCE_Primary)
+    {
+        currentHighStatCount = soldierDetail.MaxHighTierStatsAllowed;
+    }
+
     if (selectTierRanges.minSelectTier > ATNCE_TierD || selectTierRanges.maxSelectTier < ATNCE_TierD) setWeightD = 0;
     if (selectTierRanges.minSelectTier > ATNCE_TierC || selectTierRanges.maxSelectTier < ATNCE_TierC) setWeightC = 0;
     if (selectTierRanges.minSelectTier > ATNCE_TierB || selectTierRanges.maxSelectTier < ATNCE_TierB) setWeightB = 0;
     if (selectTierRanges.minSelectTier > ATNCE_TierA || selectTierRanges.maxSelectTier < ATNCE_TierA) setWeightA = 0;
 
-    `LOG("The SET select Tier Values are: D=" @ setWeightD @ "C=" @ setWeightC @ "B=" @ setWeightB @ "A=" @ setWeightA, coreConfig.ATNCE_EnableLogging, 'WOTCArchetype_ATNCE');
-
-    if (statStateDetails.SelectedArchetypeIndex >= 0)
+    if (soldierDetail.SelectedArchetypeIndex >= 0)
     {
-        if (statConfig.CharStatType == statStateDetails.ArchetypeStatConfig.primaryCharStatType)
+        if (statConfig.CharStatType == soldierDetail.ArchetypeStatConfig.primaryCharStatType)
         {
             setWeightD = 0; 
             setWeightC = 0;
         }
-        else if (statConfig.CharStatType == statStateDetails.ArchetypeStatConfig.secondaryCharStatType)
+        else if (statConfig.CharStatType == soldierDetail.ArchetypeStatConfig.secondaryCharStatType)
         {
             setWeightD = 0;
         }
     }
+    else if(soldierDetail.PrimaryStatRequiresHighTier && statConfig.StatGroupType == ATNCE_Primary)
+    {
+        return ATNCE_TierB;
+    }
 
-    if (statStateDetails.HighTierStatsCount >= statStateDetails.MaxHighTierStatsAllowed)
+    if (currentHighStatCount >= soldierDetail.MaxHighTierStatsAllowed)
     {   
         setWeightA = 0;
         setWeightB = 0;
+        setWeightC = statConfig.TierWeights.WeightC;
+        setWeightD = statConfig.TierWeights.WeightD;
     }   
+
+    `LOG("Resolved Tier Ranges: Min" @ selectTierRanges.minSelectTier @ "to" @ selectTierRanges.maxSelectTier, coreConfig.ATNCE_EnableLogging, 'WOTCArchetype_ATNCE');
+    `LOG("Resolved Tier Values: D=" @ setWeightD @ "C=" @ setWeightC @ "B=" @ setWeightB @ "A=" @ setWeightA, coreConfig.ATNCE_EnableLogging, 'WOTCArchetype_ATNCE');
 
     totalWeight = setWeightD + setWeightC + setWeightB + setWeightA;
 
     if (totalWeight <= 0)
     {
-        if (statStateDetails.HighTierStatsCount >= statStateDetails.MaxHighTierStatsAllowed)
+        if (currentHighStatCount >= soldierDetail.MaxHighTierStatsAllowed && selectTierRanges.maxSelectTier >= ATNCE_TierC)
         {
-            if (selectTierRanges.maxSelectTier >= ATNCE_TierC) return ATNCE_TierC;
+            return ATNCE_TierC;
         }
         return selectTierRanges.minSelectTier;
     }
