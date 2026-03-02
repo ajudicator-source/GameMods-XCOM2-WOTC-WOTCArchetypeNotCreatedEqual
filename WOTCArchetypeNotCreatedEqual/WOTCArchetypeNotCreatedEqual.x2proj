@@ -19,12 +19,14 @@ Archetypes within the RNG cycle</Description>
     <Folder Include="Src\WOTCArchetypeNotCreatedEqual\Classes\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Config\WOTCArchetypeNotCreatedEqual.XComMod" />
     <Content Include="Config\XComATNCE.ini" />
     <Content Include="Config\XComEditor.ini" />
     <Content Include="Config\XComEngine.ini" />
     <Content Include="Config\XComGame.ini" />
     <Content Include="Localization\WOTCArchetypeNotCreatedEqual.int" />
     <Content Include="ModPreview.jpg" />
+    <Content Include="PublishedFileId.ID" />
     <Content Include="ReadMe.txt" />
     <Content Include="Src\WOTCArchetypeNotCreatedEqual\Classes\X2DownloadableContentInfo_WOTCArchetypeNotCreatedEqual.uc" />
     <Content Include="Src\WOTCArchetypeNotCreatedEqual\Classes\X2DownloadableContentInfo_WOTCArchetypeNotCreatedEqual_TierResolver.uc" />
