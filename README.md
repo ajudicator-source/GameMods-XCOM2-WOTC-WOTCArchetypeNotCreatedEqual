@@ -1,32 +1,42 @@
-# WOTCArchetypeNotCreatedEqual
+Archetype Not Created Equal (ATNCE) - Latest Version 2.1
 
-A small XCOM 2 War of the Chosen mod that alters how soldiers are generated. Instead of random stat rolls, recruits are assigned to weighted quality bands with defined stat ranges and archetype influences. This ensures distinct, gritty soldiers while preserving Long War balance.
+A Balanced Procedural Stat Mod for WOTC and LWotC
 
-## Features
+Unlike traditional NCE mods that can create "God-Soldiers or Soldiers where Stat combinations dont mean much," ATNCE uses a Static Probability Pool and a Biological Limit (3-Stat Cap). Soldiers are unique, diverse, and tactically distinct without breaking the early-game balance of Long War.
 
-- **Weighted Stat Bands**: Soldiers are rolled into quality brackets rather than purely random values.
-- **Archetype Flavours**: Archetypes steer the stat distribution, giving troops recognizable builds and personalities.
-- **Balanced for LW**: Designed to work without breaking the balance of Long War campaigns.
+Key Features:
 
-## Installation
+- Tiered Rarity: HP, Aim, and Mobility are weighted (D to A).
+- No Power Creep: High-tier stats are limited to 3 per soldier.
+- Archetypes: A 5% chance to find "Hero" recruits with guaranteed specialties.
+- LWotC Optimized: Pre-configured for 13-17 Mobility and 55-75 Aim.
 
-1. Copy the `WOTCArchetypeNotCreatedEqual` folder to your `XCom2/Mods` directory.
+NOTE: If you are not playing LWOTC, update the XComATNCE.ini configuration and adjust the TierRanges. The only ones that need some change is the low and high ranges for HP and Mobility
+
+Installation
+
+1. Install via Steam or Download one of the Release zips from the github repo and extract into ..\Steam\steamapps\common\XCOM 2\XCom2-WarOfTheChosen\XComGame\Mods\
+1.a - STEAM is easier
 2. Ensure the mod is enabled in the XCOM 2 mod launcher.
-3. Start a new campaign for changes to take effect.
+3. Enable in SecondWave options [ATNCE] -> Enable
+4. Start a new campaign for changes to take effect.
+5. **CRITICAL** - You must disable Long Wars NCE Algorithms - and restart XCOM2 WOTC/LWOTC
 
-## Usage
+..\Steam\steamapps\workshop\content\268500\2683996590\Config\XComLW_Toolbox.ini
 
-No in-game settings. The system automatically applies to all newly generated soldiers.
+[LW_Toolbox_Integrated.X2DownloadableContentInfo_LWToolbox]
+bRandomizedInitialStatsEnabledAtStart=false
 
-## Localization
+Dependencies
 
-English strings can be edited in `Localization/WOTCArchetypeNotCreatedEqual.int`.
-
-## Changelog
-
-- **v1.0** – Initial release with weighted archetype-based stat bands.
+- X2WOTCCommunityHighlander v1.30.4
+- Better Second Wave Mod Support
+- XCOM2 WOTC
+- Must use the XCOM Alternative Mod Launcher (AML)
 
 
 ## License
 
-Your preferred license goes here.
+Anyone can reuse this code. MIT Free Licence :-)
+
+
