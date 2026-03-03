@@ -1,4 +1,4 @@
-Archetype Not Created Equal (ATNCE) - Latest Version 2.1
+# Archetype Not Created Equal (ATNCE) - Latest Version 2.1
 
 A Balanced Procedural Stat Mod for WOTC and LWotC
 
@@ -13,7 +13,27 @@ Key Features:
 
 NOTE: If you are not playing LWOTC, update the XComATNCE.ini configuration and adjust the TierRanges. The only ones that need some change is the low and high ranges for HP and Mobility
 
-Installation
+# Why did I create this mod?
+
+So when I was playing with LWNCE and Point Based NCE (PBNCE), both utilise a point based system, based on randomisation of how those points are allocated (to my understanding)
+
+They both work by the way, however, I found they negelected relationships between stats and you could get very very poor combinations. Both attempted to resolve this through Point swapping and/or Chance to allocate i.e. they promoted certain stats via a chance. I also found it very confusing to configure their systems to work how I like, and in some cases it was impossible. I wanted to have a chance to relate stat 1 to stat 2 for example
+
+What I did was look at their intentions and determined you can achieve the same behaviour using statistics and distributions, with a scaling system. They also have min and max values, with a baseline. In a way, the stats are already being manipulated into a range, which is very important to this mod as I used those ranges to determine the default distribution/weightings of values at certain tiers.
+
+A-High, B-Above Average, C-Average, D-Below Avaerage => Each Tiers has a range of values that can be selected and a distribution is used to decded the chance of rolling one of the tiers.
+
+The first thing I did was repliacte LWNCE and PBNCE outcomes using my algorithms. This worked as expected and was more intuitive to configure. All you need to set is Low, Good, and HIgh ranges and I will dynamically generate tier ranges. You can also easily make the game harder or easier with a few config changes.
+
+The second part, Archetypes. This is where I differ again from LWNCE and PBNCE. Along with removing the points/swapping points algorithms, I introduced Archetypes to relate 2 skills together. This has a very low chance to roll (5%), but when it does, the Algorithm will treat Primary and Secondary stats as related and promote their values i.e. not random. Primary will have a chance to roll Tiers B to A, while Secondaries will get a chance to roll tiers C to A.
+
+All other cases (Archetype is not triggered), at least 1 Primary stat must be a B or A, where B is heavily favoured (to roll an A you need to pray alot). A single primary stat is randonly selected for this initial step. Then we leave it up to fate (or your stat ranges and distribution that have been configured) to decide the rest of the stats :-)
+
+To balance the Mod and ensure a NCE feel, each soldier has a LIMIT on the HIgh-Tiers that can roll (A or B). This again is the same idea as LWNCE or PBNCE, but in their cases, was achieved using a COST system, I am just being more open about it and applying a hard limit (default is 3)
+
+At the end of this, you get NCE like normal (for 95% of soldiers), however, you will also see some times a soldier that has good HP with good mobility. Think of this like a Hybrif approach between NCE and HIdden Potential :-)
+
+# Installation
 
 1. Install via Steam or Download one of the Release zips from the github repo and extract into ..\Steam\steamapps\common\XCOM 2\XCom2-WarOfTheChosen\XComGame\Mods\
 1.a - STEAM is easier
@@ -27,7 +47,7 @@ Installation
 [LW_Toolbox_Integrated.X2DownloadableContentInfo_LWToolbox]
 bRandomizedInitialStatsEnabledAtStart=false
 
-Dependencies
+# Dependencies
 
 - X2WOTCCommunityHighlander v1.30.4
 - Better Second Wave Mod Support
@@ -38,5 +58,6 @@ Dependencies
 ## License
 
 Anyone can reuse this code. MIT Free Licence :-)
+
 
 
