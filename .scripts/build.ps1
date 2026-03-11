@@ -11,6 +11,7 @@ Write-Host "Sourcing $common"
 . ($common)
 
 $builder = [BuildProject]::new("WOTCArchetypeNotCreatedEqual", $srcDirectory, $sdkPath, $gamePath)
+$builder.SetWorkshopID(3677114190)
 
 switch ($config)
 {

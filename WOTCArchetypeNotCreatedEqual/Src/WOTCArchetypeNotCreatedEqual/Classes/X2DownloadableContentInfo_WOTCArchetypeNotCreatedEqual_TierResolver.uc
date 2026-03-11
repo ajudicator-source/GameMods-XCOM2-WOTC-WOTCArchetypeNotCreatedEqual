@@ -100,16 +100,23 @@ static function ATNCE_TierType ATNCE_SelectTierByWeighting(
     if (selectTierRanges.minSelectTier > ATNCE_TierB || selectTierRanges.maxSelectTier < ATNCE_TierB) setWeightB = 0;
     if (selectTierRanges.minSelectTier > ATNCE_TierA || selectTierRanges.maxSelectTier < ATNCE_TierA) setWeightA = 0;
 
+    fallbackTier = selectTierRanges.minSelectTier;
+
     if (soldierDetail.SelectedArchetypeIndex >= 0)
     {
         if (statConfig.CharStatType == soldierDetail.ArchetypeStatConfig.primaryCharStatType)
         {
-            setWeightD = 0; 
+            setWeightD = 0;
             setWeightC = 0;
         }
         else if (statConfig.CharStatType == soldierDetail.ArchetypeStatConfig.secondaryCharStatType)
         {
-            setWeightD = 0;
+            return ATNCE_TierB;
+        }
+        else if (currentHighStatCount < soldierDetail.MaxHighTierStatsAllowed)
+        {
+            setWeightA = 0;
+            fallbackTier = ATNCE_TierC;
         }
     }
     else if(soldierDetail.PrimaryStatRequiresHighTier && statConfig.StatGroupType == ATNCE_Primary)
@@ -127,7 +134,7 @@ static function ATNCE_TierType ATNCE_SelectTierByWeighting(
     `LOG("Resolved Tier Ranges: Min" @ selectTierRanges.minSelectTier @ "to" @ selectTierRanges.maxSelectTier, coreConfig.ATNCE_EnableLogging, 'WOTCArchetype_ATNCE');
     `LOG("Resolved Tier Values: D=" @ setWeightD @ "C=" @ setWeightC @ "B=" @ setWeightB @ "A=" @ setWeightA, coreConfig.ATNCE_EnableLogging, 'WOTCArchetype_ATNCE');
 
-    fallbackTier = selectTierRanges.minSelectTier;
+    
     if (setWeightD > 0) fallbackTier = ATNCE_TierD;
     else if (setWeightC > 0) fallbackTier = ATNCE_TierC;
     else if (setWeightB > 0) fallbackTier = ATNCE_TierB;
