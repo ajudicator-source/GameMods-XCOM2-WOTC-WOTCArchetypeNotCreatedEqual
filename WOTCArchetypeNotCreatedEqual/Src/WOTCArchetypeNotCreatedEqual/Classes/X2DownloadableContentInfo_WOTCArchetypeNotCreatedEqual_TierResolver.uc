@@ -17,28 +17,37 @@ class X2DownloadableContentInfo_WOTCArchetypeNotCreatedEqual_TierResolver extend
 static function int ATNCE_ResolveStatValueByTierWeight(
 	ATNCE_TierRanges tierRanges,
     ATNCE_TierType selectedTier,
-	bool enableLogging)
+	bool enableLogging,
+    bool applyShiftBonus = false)
 {
-	local int setStatValue, rangeDiff;
+	local int setStatValue, rangeDiff, lowBound, highBound;
 
 	switch (selectedTier)
     {
         case ATNCE_TierC:
-            rangeDiff = tierRanges.TierCHigh - tierRanges.TierCLow + 1;
-            setStatValue = tierRanges.TierCLow + `SYNC_RAND_STATIC(Max(1, rangeDiff));
+            lowBound = tierRanges.TierCLow;
+            highBound = tierRanges.TierCHigh;
             break;
         case ATNCE_TierB:
-            rangeDiff = tierRanges.TierBHigh - tierRanges.TierBLow + 1;
-            setStatValue = tierRanges.TierBLow + `SYNC_RAND_STATIC(Max(1, rangeDiff));
+            lowBound = tierRanges.TierBLow;
+            highBound = tierRanges.TierBHigh;
             break;
         case ATNCE_TierA:
-            rangeDiff = tierRanges.TierAHigh - tierRanges.TierALow + 1;
-            setStatValue = tierRanges.TierALow + `SYNC_RAND_STATIC(Max(1, rangeDiff));
+            lowBound = tierRanges.TierALow;
+            highBound = tierRanges.TierAHigh;
             break;
         default:
-            rangeDiff = tierRanges.TierDHigh - tierRanges.TierDLow + 1;
-            setStatValue = tierRanges.TierDLow + `SYNC_RAND_STATIC(Max(1, rangeDiff));
+            lowBound = tierRanges.TierDLow;
+            highBound = tierRanges.TierDHigh;
             break;
+    }
+
+    rangeDiff = highBound - lowBound;
+    setStatValue = lowBound + `SYNC_RAND_STATIC(rangeDiff + 1);
+
+    if (applyShiftBonus) 
+    {
+        setStatValue += (`SYNC_RAND_STATIC(Max(1, rangeDiff)) + 1);
     }
 
 	return setStatValue;
@@ -258,6 +267,8 @@ static function ATNCE_TierRanges ATNCE_GenerateTierRangesByArchetype(const ATNCE
 	{
 		returnTierRanges.TierAHigh = statConfig.StatRanges.RangeHigh;
 	}
+
+    returnTierRanges.CharStatType = statConfig.CharStatType;
 
 	return returnTierRanges;
 }

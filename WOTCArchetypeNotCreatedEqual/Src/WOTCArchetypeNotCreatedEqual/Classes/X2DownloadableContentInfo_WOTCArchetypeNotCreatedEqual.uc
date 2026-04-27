@@ -114,6 +114,7 @@ struct ATNCE_StatConfig
 
 struct ATNCE_TierRanges
 {
+	var ECharStatType CharStatType;
 	var int TierDLow, TierDHigh;
     var int TierCLow, TierCHigh;
     var int TierBLow, TierBHigh;
@@ -149,6 +150,7 @@ struct ATNCE_SoldierStat
 	var string StatMessage;
 	var bool isArchetypeStat;
 	var bool isStatRefined;
+	var bool isArchetypeBonusApplied;
 
 	structdefaultproperties
 	{
@@ -159,6 +161,7 @@ struct ATNCE_SoldierStat
 		StatMessage = "Normal";
 		isArchetypeStat = false;
 		isStatRefined = false;
+		isArchetypeBonusApplied = false;
 	}
 };
 
@@ -396,6 +399,7 @@ static function ATNCE_SoldierDetail ATNCE_GenerateSoldier(bool enableLogging)
 	local array<int> ordereStatFreeIndices;
 	local int randomStatFreeIndex, targetInsertStatIndex;
 	local int countPrimaryStats;
+	local bool applyArchetypeBonus;
 
 	if (default.ATNCE_StatTierWeights.Length == 0)
 	{
@@ -438,7 +442,7 @@ static function ATNCE_SoldierDetail ATNCE_GenerateSoldier(bool enableLogging)
 		}
 		else if (ordereStatFreeIndices.Length > 0)
 		{
-			randomStatFreeIndex = Rand(ordereStatFreeIndices.Length); 
+			randomStatFreeIndex = `SYNC_RAND_STATIC(ordereStatFreeIndices.Length); 
 			targetInsertStatIndex = ordereStatFreeIndices[randomStatFreeIndex];
 
 			orderedArcheConfigs[targetInsertStatIndex] = default.ATNCE_StatTierWeights[i];
@@ -452,10 +456,12 @@ static function ATNCE_SoldierDetail ATNCE_GenerateSoldier(bool enableLogging)
 		.static.ATNCE_CalculateMaxHighTierStatsAllowed();
 	
 	soldierDetail.PrimaryStatRequiresHighTier = soldierDetail.SelectedArchetypeIndex < 0 && countPrimaryStats > 0;
+	soldierStat.isArchetypeBonusApplied = false;
 
 	for (i = 0; i < orderedArcheConfigs.Length; ++i)
 	{
 		statConfig = orderedArcheConfigs[i];
+		applyArchetypeBonus = false;
 
 		`LOG("    Stat" @ statConfig.CharStatType @ "-> D/C/B/A weights:" 
 		     @ statConfig.TierWeights.WeightD @ statConfig.TierWeights.WeightC 
@@ -477,29 +483,31 @@ static function ATNCE_SoldierDetail ATNCE_GenerateSoldier(bool enableLogging)
 		
 		`LOG("    Stat" @ statConfig.CharStatType @ "selected band:" @ SelectedTier, enableLogging, 'WOTCArchetype_ATNCE');
 
-		setStatValue = class'X2DownloadableContentInfo_WOTCArchetypeNotCreatedEqual_TierResolver'
-		.static.ATNCE_ResolveStatValueByTierWeight(tierRanges, selectedTier, enableLogging);
-
-		`LOG("    Stat" @ statConfig.CharStatType @ "selected value:" @ SetStatValue, enableLogging, 'WOTCArchetype_ATNCE');
-
 		soldierStat.CharStatType = statConfig.CharStatType;
-        soldierStat.StatValue = setStatValue;
 		soldierStat.StatGroupType = statConfig.StatGroupType;
 		soldierStat.Tier = selectedTier;
 		soldierStat.TierRanges = tierRanges;
 		soldierStat.StatMessage = "Normal";
 
 		if (selectedArchetypeIndex >= 0)
-		{
+		{	
 			if (statConfig.CharStatType == soldierDetail.ArchetypeStatConfig.primaryCharStatType)
 			{
 				soldierStat.isArchetypeStat = true;
 				soldierStat.StatMessage = "AT Primary";
+				applyArchetypeBonus = true;
 			}
 			else if (statConfig.CharStatType == soldierDetail.ArchetypeStatConfig.secondaryCharStatType)
 			{
 				soldierStat.isArchetypeStat = true;
 				soldierStat.StatMessage = "AT Secondary";
+				applyArchetypeBonus = `SYNC_RAND_STATIC(10) < 2;
+			}
+
+			if(applyArchetypeBonus) 
+			{
+				soldierStat.isArchetypeBonusApplied = true;
+				soldierStat.StatMessage = soldierStat.StatMessage @ " ++";
 			}
 		}
 
@@ -510,6 +518,13 @@ static function ATNCE_SoldierDetail ATNCE_GenerateSoldier(bool enableLogging)
 				soldierDetail.PrimaryStatRequiresHighTier = false;
 			}
 		}
+
+		setStatValue = class'X2DownloadableContentInfo_WOTCArchetypeNotCreatedEqual_TierResolver'
+		.static.ATNCE_ResolveStatValueByTierWeight(tierRanges, selectedTier, enableLogging, applyArchetypeBonus);
+
+		soldierStat.StatValue = setStatValue;
+
+		`LOG("    Stat" @ statConfig.CharStatType @ "selected value:" @ SetStatValue, enableLogging, 'WOTCArchetype_ATNCE');
 
         soldierDetail.SoldierStats.AddItem(soldierStat);
 	}
@@ -681,7 +696,7 @@ static function SyncCombatIntelligence(XComGameState_Unit unit)
 
     if (finalCI <= 0) 
 	{
-		finalCI = (Rand(2) == 0) ? 1 : 0;
+		finalCI = (`SYNC_RAND_STATIC(2) == 0) ? 1 : 0;
 	}
 
     if (finalCI > 4) finalCI = 4;
